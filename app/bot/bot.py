@@ -5,6 +5,11 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import CommandStart
 import httpx
 from app.core.scheduler import start_scheduler  # импортируем start_scheduler
+from fastapi import FastAPI
+from aiogram import types
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+import uvicorn
+from aiohttp import web
 
 # Токен Telegram-бота
 API_TOKEN = '7621472185:AAE48lu9U9gtXrzzzuUzXZlO2EI94G_TCuI'
@@ -12,19 +17,23 @@ API_TOKEN = '7621472185:AAE48lu9U9gtXrzzzuUzXZlO2EI94G_TCuI'
 # URL вашего API
 API_URL = "https://stormy-bayou-06853-a62965140369.herokuapp.com/api/v1/products"
 
-
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
 # Инициализация бота и Dispatcher
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
-kd_list = [[KeyboardButton(text="🔍 Получить данные по товару")]]
+
+# FastAPI приложение
+app = FastAPI()
+
 # Кнопки для взаимодействия
+kd_list = [[KeyboardButton(text="🔍 Получить данные по товару")]]
 keyboard = ReplyKeyboardMarkup(
     keyboard=kd_list,  # Correct list of lists initialization
     resize_keyboard=True
 )
+
 
 # Обработчик команды /start
 @dp.message(CommandStart())
@@ -34,10 +43,12 @@ async def send_welcome(message: Message):
         reply_markup=keyboard
     )
 
+
 # Обработчик на кнопку и ввод артикула
 @dp.message(lambda message: message.text == "🔍 Получить данные по товару")
 async def ask_artikul(message: Message):
     await message.reply("Пожалуйста, отправьте артикул товара:")
+
 
 # Обработчик на ввод артикула товара (числовое значение)
 @dp.message(lambda message: message.text.isdigit())  # Обрабатываем числовые сообщения
@@ -64,24 +75,57 @@ async def get_product_data(message: Message):
             else:
                 reply = f"⚠️ Ошибка: {response.json().get('detail', 'Не удалось получить данные.')}"
 
+        except httpx.HTTPStatusError as e:
+            logging.error(f"Ошибка HTTP: {e}")
+            reply = "⚠️ Произошла ошибка при запросе данных от API."
+        except httpx.RequestError as e:
+            logging.error(f"Ошибка запроса: {e}")
+            reply = "⚠️ Произошла ошибка при отправке запроса к API."
         except Exception as e:
-            logging.error(f"Ошибка при запросе к API: {e}")
+            logging.error(f"Неизвестная ошибка: {e}")
             reply = f"⚠️ Ошибка при обращении к API: {e}"
 
     await message.reply(reply)
+
 
 # Обработчик для остальных текстовых сообщений
 @dp.message()
 async def echo(message: Message):
     await message.reply("Я могу обработать только артикулы товаров или команды.")
 
-# Запуск бота и планировщика
+
+# Устанавливаем webhook
+@app.on_event("startup")
+async def on_start():
+    webhook_url = 'https://stormy-bayou-06853-a62965140369.herokuapp.com/webhook'
+    await bot.set_webhook(webhook_url)
+
+
+# Webhook endpoint
+@app.post("/webhook")
+async def webhook(update: dict):
+    try:
+        update_obj = types.Update(**update)
+        await dp.process_update(update_obj)
+    except Exception as e:
+        logging.error(f"Ошибка при обработке вебхука: {e}")
+
+
+# Запуск бота
 async def start_bot():
     # Запуск планировщика
     await start_scheduler()
 
-    # Запуск бота
-    await dp.start_polling(bot, timeout=60, retry_after=10)
+    # Настроим aiohttp приложение
+    app_aiohttp = web.Application()
+    SimpleRequestHandler(dp, bot).register(app_aiohttp, path="/webhook")
+
+    # Запуск FastAPI приложения с aiohttp сервером
+    runner = web.AppRunner(app_aiohttp)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", 8000)
+    await site.start()
+
 
 # Запуск основного процесса
 if __name__ == '__main__':
