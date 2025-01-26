@@ -7,7 +7,7 @@ import httpx
 from app.core.scheduler import start_scheduler  # импортируем start_scheduler
 from fastapi import FastAPI
 from aiogram import types
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 import uvicorn
 from aiohttp import web
 
@@ -34,7 +34,6 @@ keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-
 # Обработчик команды /start
 @dp.message(CommandStart())
 async def send_welcome(message: Message):
@@ -43,12 +42,10 @@ async def send_welcome(message: Message):
         reply_markup=keyboard
     )
 
-
 # Обработчик на кнопку и ввод артикула
 @dp.message(lambda message: message.text == "🔍 Получить данные по товару")
 async def ask_artikul(message: Message):
     await message.reply("Пожалуйста, отправьте артикул товара:")
-
 
 # Обработчик на ввод артикула товара (числовое значение)
 @dp.message(lambda message: message.text.isdigit())  # Обрабатываем числовые сообщения
@@ -74,7 +71,6 @@ async def get_product_data(message: Message):
                     reply = "⚠️ Не удалось найти товар с этим артикулом."
             else:
                 reply = f"⚠️ Ошибка: {response.json().get('detail', 'Не удалось получить данные.')}"
-
         except httpx.HTTPStatusError as e:
             logging.error(f"Ошибка HTTP: {e}")
             reply = "⚠️ Произошла ошибка при запросе данных от API."
@@ -87,19 +83,16 @@ async def get_product_data(message: Message):
 
     await message.reply(reply)
 
-
 # Обработчик для остальных текстовых сообщений
 @dp.message()
 async def echo(message: Message):
     await message.reply("Я могу обработать только артикулы товаров или команды.")
-
 
 # Устанавливаем webhook
 @app.on_event("startup")
 async def on_start():
     webhook_url = 'https://stormy-bayou-06853-a62965140369.herokuapp.com/webhook'
     await bot.set_webhook(webhook_url)
-
 
 # Webhook endpoint
 @app.post("/webhook")
@@ -110,22 +103,21 @@ async def webhook(update: dict):
     except Exception as e:
         logging.error(f"Ошибка при обработке вебхука: {e}")
 
-
-# Запуск бота
+# Запуск бота и вебхуков
 async def start_bot():
     # Запуск планировщика
     await start_scheduler()
 
     # Настроим aiohttp приложение
     app_aiohttp = web.Application()
-    SimpleRequestHandler(dp, bot).register(app_aiohttp, path="/webhook")
+    handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
+    handler.register(app_aiohttp, path='/webhook')
 
-    # Запуск FastAPI приложения с aiohttp сервером
+    # Запуск aiohttp сервера с FastAPI приложением
     runner = web.AppRunner(app_aiohttp)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", 8000)
     await site.start()
-
 
 # Запуск основного процесса
 if __name__ == '__main__':
