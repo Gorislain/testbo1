@@ -81,7 +81,7 @@ async def start_bot():
     await start_scheduler()
 
     # Запуск бота
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, timeout=60, retry_after=5)
 
 # Запуск основного процесса
 if __name__ == '__main__':
