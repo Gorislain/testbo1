@@ -7,7 +7,7 @@ import httpx
 from app.core.scheduler import start_scheduler  # импортируем start_scheduler
 
 # Токен Telegram-бота
-API_TOKEN = '8093417419:AAGNe6AbUuFzEin_86wuE0Z_4eJ0MQwSrUY'
+API_TOKEN = '7621472185:AAE48lu9U9gtXrzzzuUzXZlO2EI94G_TCuI'
 
 # URL вашего API
 API_URL = "https://stormy-bayou-06853-a62965140369.herokuapp.com/api/v1/products"
