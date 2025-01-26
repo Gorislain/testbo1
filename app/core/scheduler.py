@@ -24,7 +24,7 @@ async def start_scheduler():
     # Добавление задачи в планировщик
     scheduler.add_job(
         save_product_data,
-        IntervalTrigger(minutes=30),
+        IntervalTrigger(seconds=30),
         id="periodic_data_collection",
         replace_existing=True
     )
