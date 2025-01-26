@@ -8,23 +8,3 @@ services:
     environment:
       # Строка подключения для базы данных на Heroku
       DATABASE_URL: "postgres://ue0qc00r65q5p9:pb9f1df95d9d242d3b1b352665f3fc216dd1ca2c38e42cc570e64eff6e4f639bb@cd1goc44htrmfn.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d70sqoi1b1v2o1"
-    depends_on:
-      - db
-    networks:
-      - app-network
-
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: evan
-      POSTGRES_PASSWORD: Aa123456
-      POSTGRES_DB: my_db
-    ports:
-      - "5432:5432"
-    command: ["postgres"]
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge  # Используем стандартную bridge-сеть
