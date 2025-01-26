@@ -10,7 +10,8 @@ from app.core.scheduler import start_scheduler  # импортируем start_s
 API_TOKEN = '8093417419:AAGNe6AbUuFzEin_86wuE0Z_4eJ0MQwSrUY'
 
 # URL вашего API
-API_URL = "http://127.0.0.1:8000/api/v1/products"
+API_URL = "https://stormy-bayou-06853-a62965140369.herokuapp.com/api/v1/products"
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)

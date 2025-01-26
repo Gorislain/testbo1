@@ -6,7 +6,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: "postgresql+asyncpg://evan:Aa123456@host.docker.internal:5432/my_db"
+      # Строка подключения для базы данных на Heroku
+      DATABASE_URL: "postgres://ue0qc00r65q5p9:pb9f1df95d9d242d3b1b352665f3fc216dd1ca2c38e42cc570e64eff6e4f639bb@cd1goc44htrmfn.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d70sqoi1b1v2o1"
     depends_on:
       - db
     networks:
@@ -18,18 +19,12 @@ services:
       POSTGRES_USER: evan
       POSTGRES_PASSWORD: Aa123456
       POSTGRES_DB: my_db
-    volumes:
-      - C:/Users/evan0/PycharmProjects/PythonProject/PycharmProjectsOLD/testbot/project-root/config/postgresql.conf:/etc/postgresql/postgresql.conf
-      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"  # Пробрасываем порт 5432 для доступа к базе данных на хосте
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+      - "5432:5432"
+    command: ["postgres"]
     networks:
       - app-network
 
 networks:
   app-network:
     driver: bridge  # Используем стандартную bridge-сеть
-
-volumes:
-  postgres_data:
